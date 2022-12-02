@@ -1,4 +1,4 @@
 {
-	"output" : "publix",
-	"urldir" :  "url"
+	"output" : "public",
+	"urldir" :  "urls"
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	_ "embed"
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,6 +18,9 @@ var tmplsrc string
 
 //go:embed front.html
 var frontsrc string
+
+//go:embed config.json
+var defaultConf string
 
 var (
 	Warnlog *log.Logger
@@ -41,6 +45,25 @@ type Config struct {
 
 func checkDir(targedir string) error {
 	return os.MkdirAll(filepath.Join(".", targedir), os.ModePerm)
+}
+
+func initNewSite(sitename string) {
+	urlsdir := filepath.Join(sitename, "urls")
+	checkDir(urlsdir)
+	f, err := os.Create(filepath.Join(sitename, "config.json"))
+
+	if err != nil {
+		Warnlog.Println("Failed to create config.json; project will be using default values")
+	}
+
+	defer f.Close()
+
+	_, errr := f.WriteString(defaultConf)
+
+	if errr != nil {
+		Warnlog.Println("Failed to write to default config.json; project will be using default values")
+	}
+
 }
 
 func readConfig() (Config, bool) {
@@ -142,7 +165,7 @@ func processUrl(fpath string, fname string) (UrlData, bool) {
 	return UrlData{}, false
 }
 
-func main() {
+func build() {
 	conf, isOk := readConfig()
 	var OUT string
 	var CDIR string
@@ -193,5 +216,28 @@ func main() {
 	}
 
 	createFrontpage(OUT)
+
+}
+
+func main() {
+	//	args := os.Args
+	helpmsg := "staticurl v0.1.0\nsimple and fast flat-file based url shortener without any database\n"
+
+	buildflag := flag.Bool("b", false, "Build Current Project")
+	sitename := flag.String("n", "", "Create New staticurl Site")
+	flag.Parse()
+
+	if *buildflag {
+		build()
+		return
+	}
+
+	if len(*sitename) >= 1 {
+		initNewSite(*sitename)
+		return
+	}
+
+	println(helpmsg)
+	flag.PrintDefaults()
 
 }
